@@ -73,7 +73,7 @@ class _DeletableListPage extends State<DeletableListPage> {
                     data[index],
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
-                  Text('Slide to left or right to delete me'),
+                  Text('Slide to left or right to delete'),
                 ],
               ),
               padding: EdgeInsets.all(20),
