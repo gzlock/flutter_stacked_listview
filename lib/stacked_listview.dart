@@ -213,7 +213,7 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
     if (confirmDelete) widget.onRemove?.call(widget.index);
   }
 
-  animateXTo(double end) {
+  _animateTo(double end) {
     animationController
       ..stop()
       ..reset();
@@ -280,7 +280,7 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
     _dragOffset += widget.scrollDirection == Axis.vertical
         ? details.delta.dx
         : details.delta.dy;
-    print('update $_dragOffset');
+    // print('update $_dragOffset');
     setState(() {});
   }
 
@@ -298,6 +298,6 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
       confirmDelete = await widget.beforeRemove?.call(widget.index) ?? true;
       if (!confirmDelete) end = 0;
     }
-    animateXTo(end);
+    _animateTo(end);
   }
 }

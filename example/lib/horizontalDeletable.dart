@@ -27,6 +27,7 @@ class _HorizontalDeletableListPage extends State<HorizontalDeletableListPage> {
           widthFactor: 0.7,
           onRemove: (index) {
             setState(() {
+              print('删除 ${data[index]}');
               data.removeAt(index);
             });
           },
