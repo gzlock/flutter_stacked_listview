@@ -2,23 +2,15 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:stacked_listview/stacked_listview.dart';
 
+import 'data.dart';
+
 class DeletableListPage extends StatefulWidget {
   @override
   State createState() => _DeletableListPage();
 }
 
 class _DeletableListPage extends State<DeletableListPage> {
-  final List<String> data = [
-    'Burger',
-    'Cheese Dip',
-    'Cola',
-    'Fries',
-    'Ice Cream',
-    'Noodles',
-    'Pizza',
-    'Sandwich',
-    'Wrap',
-  ];
+  final data = List.from(Data);
   final double itemHeight = 400;
 
   @override

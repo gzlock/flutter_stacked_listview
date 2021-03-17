@@ -4,7 +4,7 @@ import 'package:stacked_listview/stacked_listview.dart';
 
 import 'data.dart';
 
-class NormalListPage extends StatelessWidget {
+class NormalHorizontalListPage extends StatelessWidget {
   final data = List.from(Data);
   final double itemHeight = 400;
 
@@ -15,13 +15,30 @@ class NormalListPage extends StatelessWidget {
       backgroundColor: Colors.black,
       body: SafeArea(
         child: StackedListView(
+          scrollDirection: Axis.horizontal,
           padding: EdgeInsets.only(left: 20, right: 20, top: 50),
           itemCount: data.length,
           itemExtent: itemHeight,
-          heightFactor: 0.7,
+          beforeRemove: (index) async {
+            return await showDialog<bool>(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: Text('Confirm delete ${data[index]} ?'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text('Cancel')),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text('Delete'),
+                  ),
+                ],
+              ),
+            ).then((value) => value == true);
+          },
           builder: (_, index) {
             return Container(
-              width: itemHeight,
+              height: itemHeight,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.all(Radius.circular(20.0)),
                 color: Colors.white,
@@ -33,7 +50,7 @@ class NormalListPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data[index],
+                    Data[index],
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ],

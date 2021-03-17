@@ -11,7 +11,12 @@ class StackedListView extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
   final ScrollController? controller;
   final ScrollPhysics? physics;
+
+  /// Item count
   final int itemCount;
+
+  /// When the [scrollDirection] equal Axis.vertical, it's be item height
+  /// When the [scrollDirection] equal Axis.horizontal, it's be item width
   final double itemExtent;
 
   /// 0.0 ~ 1.0
@@ -19,7 +24,14 @@ class StackedListView extends StatefulWidget {
 
   /// 0.0 ~ 1.0
   final double heightFactor;
+
+  /// 0.0 ~ 1.0
+  final double widthFactor;
+
+  /// After deleted item will trigger it
   final void Function(int index)? onRemove;
+
+  /// Before delete item and return true will delete item
   final Future<bool> Function(int index)? beforeRemove;
 
   const StackedListView({
@@ -33,11 +45,18 @@ class StackedListView extends StatefulWidget {
     this.physics,
     required this.itemExtent,
     this.fadeOutFrom = 0.7,
-    this.heightFactor = 0.7,
+    this.heightFactor = 1,
+    this.widthFactor = 1,
     this.onRemove,
     this.beforeRemove,
-  })  : assert(fadeOutFrom >= 0 && fadeOutFrom <= 1),
-        assert(heightFactor >= 0 && heightFactor <= 1),
+  })  : assert(fadeOutFrom >= 0 && fadeOutFrom <= 1,
+            'The range of "fadeOutFrom" must be 0.0 ~ 1.0'),
+        assert(widthFactor >= 0 && widthFactor <= 1,
+            'The range of "widthFactor" must be 0.0 ~ 1.0'),
+        assert(heightFactor >= 0 && heightFactor <= 1,
+            'The range of "heightFactor" must be 0.0 ~ 1.0'),
+        assert(widthFactor == 1 || heightFactor == 1,
+            'One of "widthFactor" or "heightFactor" must equal 1'),
         super(key: key);
 
   @override
@@ -67,27 +86,30 @@ class StackedListViewState extends State<StackedListView> {
 
   @override
   Widget build(BuildContext context) {
-    final realHeight = widget.itemExtent * widget.heightFactor;
-    final fadeOut = widget.fadeOutFrom == 1 ? 0 : 1.0 - widget.fadeOutFrom;
+    final realExtent = widget.itemExtent *
+        (widget.scrollDirection == Axis.horizontal
+            ? widget.widthFactor
+            : widget.heightFactor);
     return Stack(children: [
       ListView.builder(
+          scrollDirection: widget.scrollDirection,
           padding: widget.padding,
           controller: controller,
           itemCount: widget.itemCount,
           physics: widget.physics ?? BouncingScrollPhysics(),
           itemBuilder: (context, index) {
             double scroll =
-                ((controller.offset - index * realHeight) / realHeight);
+                ((controller.offset - index * realExtent) / realExtent);
             double currentScroll = scroll.clamp(0.0, 1.0);
 
             double opacity = 1.0;
-            double y = 0;
-            bool atTop = false;
+            double offset = 0;
+            bool atFirst = false;
 
             if (currentScroll > 0 || (index == 0 && controller.offset <= 0)) {
               /// 当前的item是否在最顶部
               if (currentScroll < 1) {
-                atTop = true;
+                atFirst = true;
               }
 
               /// 计算透明度
@@ -104,20 +126,30 @@ class StackedListViewState extends State<StackedListView> {
               }
 
               /// 计算偏移
-              y = (currentScroll * realHeight).roundToDouble();
+              offset = (currentScroll * realExtent).roundToDouble();
             }
             opacity = opacity.clamp(0.0, 1.0);
             return AnimatedItemWidget(
               key: UniqueKey(),
-              atTop: atTop,
+              scrollDirection: widget.scrollDirection,
+              atFirst: atFirst,
               lastOne: index == (widget.itemCount - 1),
               index: index,
-              offsetY: y,
+              offset: offset,
               opacity: opacity,
+              widthFactor: widget.widthFactor,
               heightFactor: widget.heightFactor,
               onRemove: widget.onRemove,
               beforeRemove: widget.beforeRemove,
-              child: widget.builder(context, index),
+              child: SizedBox(
+                width: widget.scrollDirection == Axis.vertical
+                    ? double.infinity
+                    : widget.itemExtent,
+                height: widget.scrollDirection == Axis.vertical
+                    ? widget.itemExtent
+                    : double.infinity,
+                child: widget.builder(context, index),
+              ),
             );
           }),
     ]);
@@ -126,23 +158,26 @@ class StackedListViewState extends State<StackedListView> {
 
 class AnimatedItemWidget extends StatefulWidget {
   final int index;
-  final bool atTop, lastOne;
+  final bool atFirst, lastOne;
   final double opacity;
-  final double offsetY;
-  final double heightFactor;
+  final double offset;
+  final double widthFactor, heightFactor;
   final Widget child;
+  final Axis scrollDirection;
   final void Function(int index)? onRemove;
   final Future<bool> Function(int index)? beforeRemove;
 
   const AnimatedItemWidget({
     Key? key,
-    required this.atTop,
+    required this.atFirst,
     required this.lastOne,
     required this.index,
-    required this.offsetY,
+    required this.offset,
     required this.opacity,
+    required this.widthFactor,
     required this.heightFactor,
     required this.child,
+    required this.scrollDirection,
     this.onRemove,
     this.beforeRemove,
   }) : super(key: key);
@@ -159,7 +194,7 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
   );
   late final bool deletable = widget.onRemove != null;
   Animation<double>? animation;
-  double offsetX = 0;
+  double _dragOffset = 0;
   bool confirmDelete = false;
 
   @override
@@ -169,7 +204,7 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
   }
 
   update() {
-    offsetX = animation?.value ?? 0;
+    _dragOffset = animation?.value ?? 0;
     setState(() {});
   }
 
@@ -182,8 +217,8 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
     animationController
       ..stop()
       ..reset();
-    animation =
-        Tween<double>(begin: offsetX, end: end).animate(animationController);
+    animation = Tween<double>(begin: _dragOffset, end: end)
+        .animate(animationController);
     animationController.forward();
     (animation!).addListener(update);
     (animation!).addStatusListener(animationStatus);
@@ -191,59 +226,78 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double width = constraints.maxWidth;
-        return GestureDetector(
-          onHorizontalDragStart: deletable
-              ? (_) {
-                  animationController..stop();
-                  animation?.removeListener(update);
-                  animation?.removeStatusListener(animationStatus);
-                  // print('start $offsetX');
-                }
-              : null,
-          onHorizontalDragUpdate: deletable
-              ? (DragUpdateDetails details) {
-                  offsetX += details.delta.dx;
-                  // print('update $offsetX');
-                  setState(() {});
-                }
-              : null,
-          onHorizontalDragEnd: deletable
-              ? (DragEndDetails details) async {
-                  final screenWidth = MediaQuery.of(context).size.width;
-                  double end = 0;
-                  if (offsetX < -width / 2.0) {
-                    end = -screenWidth;
-                  } else if (offsetX > (screenWidth / 2.0)) {
-                    end = screenWidth;
-                  }
-                  if (end != 0) {
-                    confirmDelete =
-                        await widget.beforeRemove?.call(widget.index) ?? true;
-                    if (!confirmDelete) end = 0;
-                  }
-                  animateXTo(end);
-                }
-              : null,
-          child: Transform(
-            alignment: Alignment.topCenter,
-            transform: Matrix4.identity()..translate(offsetX, widget.offsetY),
-            child: Opacity(
-              opacity: widget.opacity,
-              child: Align(
-                alignment: Alignment.topCenter,
-                heightFactor: widget.lastOne ? 1.0 : widget.heightFactor,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: widget.child,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+    Matrix4 transform;
+    Alignment alignment;
+    if (widget.scrollDirection == Axis.vertical) {
+      alignment = Alignment.topCenter;
+      transform = Matrix4.identity()..translate(_dragOffset, widget.offset);
+    } else {
+      alignment = Alignment.centerLeft;
+      transform = Matrix4.identity()..translate(widget.offset, _dragOffset);
+    }
+    Widget child = Transform(
+      alignment: alignment,
+      transform: transform,
+      child: Opacity(
+        opacity: widget.opacity,
+        child: Align(
+          alignment: alignment,
+          widthFactor: widget.lastOne ? 1.0 : widget.widthFactor,
+          heightFactor: widget.lastOne ? 1.0 : widget.heightFactor,
+          child: widget.child,
+        ),
+      ),
     );
+    if (deletable) {
+      // print('deletable ${widget.scrollDirection}');
+      if (widget.scrollDirection == Axis.horizontal) {
+        child = GestureDetector(
+          onVerticalDragStart: _dragStart,
+          onVerticalDragUpdate: _dragUpdate,
+          onVerticalDragEnd: _dragEnd,
+          child: child,
+        );
+      } else {
+        child = GestureDetector(
+          onHorizontalDragStart: _dragStart,
+          onHorizontalDragUpdate: _dragUpdate,
+          onHorizontalDragEnd: _dragEnd,
+          child: child,
+        );
+      }
+    }
+    return child;
+  }
+
+  _dragStart(_) {
+    animationController..stop();
+    animation?.removeListener(update);
+    animation?.removeStatusListener(animationStatus);
+    // print('start $offsetX');
+  }
+
+  _dragUpdate(DragUpdateDetails details) {
+    _dragOffset += widget.scrollDirection == Axis.vertical
+        ? details.delta.dx
+        : details.delta.dy;
+    print('update $_dragOffset');
+    setState(() {});
+  }
+
+  _dragEnd(DragEndDetails details) async {
+    final size = MediaQuery.of(context).size;
+    final target =
+        widget.scrollDirection == Axis.horizontal ? size.height : size.width;
+    double end = 0;
+    if (_dragOffset < -target / 2.0) {
+      end = -target;
+    } else if (_dragOffset > (target / 2.0)) {
+      end = target;
+    }
+    if (end != 0) {
+      confirmDelete = await widget.beforeRemove?.call(widget.index) ?? true;
+      if (!confirmDelete) end = 0;
+    }
+    animateXTo(end);
   }
 }
