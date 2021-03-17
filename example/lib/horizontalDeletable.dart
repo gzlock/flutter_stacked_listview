@@ -4,6 +4,7 @@ import 'package:stacked_listview/stacked_listview.dart';
 
 import 'data.dart';
 
+
 class HorizontalDeletableListPage extends StatefulWidget {
   @override
   State<StatefulWidget> createState() => _HorizontalDeletableListPage();
@@ -26,10 +27,9 @@ class _HorizontalDeletableListPage extends State<HorizontalDeletableListPage> {
           itemExtent: itemHeight,
           widthFactor: 0.7,
           onRemove: (index) {
-            setState(() {
-              print('删除 ${data[index]}');
-              data.removeAt(index);
-            });
+            print('删除 ${data[index]}');
+            data.removeAt(index);
+            setState(() {});
           },
           beforeRemove: (index) async {
             return await showDialog<bool>(
@@ -62,7 +62,7 @@ class _HorizontalDeletableListPage extends State<HorizontalDeletableListPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    Data[index],
+                    data[index],
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ],

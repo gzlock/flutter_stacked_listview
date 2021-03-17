@@ -209,7 +209,7 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
   }
 
   animationStatus(AnimationStatus status) {
-    // print('animationStatus $confirmDelete');
+    print('animationStatus $confirmDelete');
     if (confirmDelete) widget.onRemove?.call(widget.index);
   }
 
