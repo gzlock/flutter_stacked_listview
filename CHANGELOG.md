@@ -1,4 +1,10 @@
-## [1.0.1+1] - Fixed example.
+## [1.0.2+2] - Updated the duration of delete animation.
+
+## [1.0.2+1] - Updated example.
+
+## [1.0.2] - Add swipe velocity to delete item.
+
+## [1.0.1+1] - Updated example.
 
 ## [1.0.1] - Fixed horizontal scroll direction logic.
 

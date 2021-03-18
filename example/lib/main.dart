@@ -31,13 +31,26 @@ class MyHomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text('Stacked ListView Example')),
       body: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(
-            'You can try to modify the \'fadeOutFrom\' and \'widthFactor\' or \'heightFactor\' parameters in the following example.'),
-        Text('The "widthFactor" is about the stacked width for each children'),
-        Text(
-            'The "heightFactor" is about the stacked height for each children'),
-        Text(
-            'The "fadeOutFrom" is about the first child widget how to fade out'),
+        Card(
+          child: Padding(
+            padding: EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Try to modify the \'fadeOutFrom\' and \'widthFactor\' or \'heightFactor\' parameters in the following example.',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                    'The "widthFactor" is about the stacked width for each children'),
+                Text(
+                    'The "heightFactor" is about the stacked height for each children'),
+                Text(
+                    'The "fadeOutFrom" is about the first child widget how to fade out'),
+              ],
+            ),
+          ),
+        ),
         Expanded(
           child: ListView(
             children: ListTile.divideTiles(

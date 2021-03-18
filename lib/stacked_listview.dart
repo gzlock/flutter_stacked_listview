@@ -2,6 +2,7 @@ library stacked_listview;
 
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
 class StackedListView extends StatefulWidget {
@@ -189,7 +190,8 @@ class AnimatedItemWidget extends StatefulWidget {
 class _AnimatedItemWidget extends State<AnimatedItemWidget>
     with TickerProviderStateMixin {
   late final AnimationController animationController = AnimationController(
-    duration: Duration(milliseconds: 100),
+    // duration: Duration(milliseconds: 100),
+    duration: kThemeChangeDuration,
     vsync: this,
   );
   late final bool deletable = widget.onRemove != null;
@@ -209,7 +211,7 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
   }
 
   animationStatus(AnimationStatus status) {
-    print('animationStatus $confirmDelete');
+    // print('animationStatus $confirmDelete');
     if (confirmDelete) widget.onRemove?.call(widget.index);
   }
 
@@ -286,10 +288,17 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
 
   _dragEnd(DragEndDetails details) async {
     final size = MediaQuery.of(context).size;
-    final target =
-        widget.scrollDirection == Axis.horizontal ? size.height : size.width;
+    double velocity;
+    double target;
     double end = 0;
-    if (_dragOffset < -target / 2.0) {
+    if (widget.scrollDirection == Axis.horizontal) {
+      target = size.height;
+      velocity = details.velocity.pixelsPerSecond.dy.abs();
+    } else {
+      target = size.width;
+      velocity = details.velocity.pixelsPerSecond.dx.abs();
+    }
+    if (velocity > 2000 || (_dragOffset < -target / 2.0)) {
       end = -target;
     } else if (_dragOffset > (target / 2.0)) {
       end = target;
