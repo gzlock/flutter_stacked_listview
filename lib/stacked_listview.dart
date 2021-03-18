@@ -190,7 +190,6 @@ class AnimatedItemWidget extends StatefulWidget {
 class _AnimatedItemWidget extends State<AnimatedItemWidget>
     with TickerProviderStateMixin {
   late final AnimationController animationController = AnimationController(
-    // duration: Duration(milliseconds: 100),
     duration: kThemeChangeDuration,
     vsync: this,
   );
