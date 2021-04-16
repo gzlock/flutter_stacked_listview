@@ -1,3 +1,5 @@
+## [1.0.3] - Fixed a issue about the animation of delete.
+
 ## [1.0.2+2] - Updated the duration of delete animation.
 
 ## [1.0.2+1] - Updated example.

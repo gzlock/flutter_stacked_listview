@@ -287,25 +287,25 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
 
   _dragEnd(DragEndDetails details) async {
     final size = MediaQuery.of(context).size;
-    double velocity;
+    double velocity = details.primaryVelocity!;
     double target;
     double end = 0;
     if (widget.scrollDirection == Axis.horizontal) {
       target = size.height;
-      velocity = details.velocity.pixelsPerSecond.dy.abs();
     } else {
       target = size.width;
-      velocity = details.velocity.pixelsPerSecond.dx.abs();
     }
-    if (velocity > 2000 || (_dragOffset < -target / 2.0)) {
-      end = -target;
-    } else if (_dragOffset > (target / 2.0)) {
-      end = target;
+    // print({
+    //   'target': target,
+    //   'dragOffset': _dragOffset,
+    //   'primaryVelocity': details.primaryVelocity,
+    //   'velocity': details.velocity,
+    // });
+    if (velocity.abs() > 2000 || (_dragOffset < -target / 2.0)) {
+      end = _dragOffset > 0 ? target : -target;
     }
-    if (end != 0) {
-      confirmDelete = await widget.beforeRemove?.call(widget.index) ?? true;
-      if (!confirmDelete) end = 0;
-    }
+    confirmDelete = await widget.beforeRemove?.call(widget.index) ?? true;
+    if (!confirmDelete) end = 0;
     _animateTo(end);
   }
 }
