@@ -1,3 +1,5 @@
+## [1.0.3+2] - Fixed the call moment of 'beforeRemove' callback.
+
 ## [1.0.3+1] - Updated readme.
 
 ## [1.0.3] - Fixed a issue about the animation of delete.

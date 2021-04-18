@@ -12,6 +12,7 @@ class StackedListView extends StatefulWidget {
   final EdgeInsetsGeometry? padding;
   final ScrollController? controller;
   final ScrollPhysics? physics;
+  final Duration animateDuration;
 
   /// Item count
   final int itemCount;
@@ -50,6 +51,7 @@ class StackedListView extends StatefulWidget {
     this.widthFactor = 1,
     this.onRemove,
     this.beforeRemove,
+    this.animateDuration = kThemeAnimationDuration,
   })  : assert(fadeOutFrom >= 0 && fadeOutFrom <= 1,
             'The range of "fadeOutFrom" must be 0.0 ~ 1.0'),
         assert(widthFactor >= 0 && widthFactor <= 1,
@@ -142,6 +144,7 @@ class StackedListViewState extends State<StackedListView> {
               heightFactor: widget.heightFactor,
               onRemove: widget.onRemove,
               beforeRemove: widget.beforeRemove,
+              animateDuration: widget.animateDuration,
               child: SizedBox(
                 width: widget.scrollDirection == Axis.vertical
                     ? double.infinity
@@ -167,6 +170,7 @@ class AnimatedItemWidget extends StatefulWidget {
   final Axis scrollDirection;
   final void Function(int index)? onRemove;
   final Future<bool> Function(int index)? beforeRemove;
+  final Duration animateDuration;
 
   const AnimatedItemWidget({
     Key? key,
@@ -179,6 +183,7 @@ class AnimatedItemWidget extends StatefulWidget {
     required this.heightFactor,
     required this.child,
     required this.scrollDirection,
+    required this.animateDuration,
     this.onRemove,
     this.beforeRemove,
   }) : super(key: key);
@@ -190,7 +195,7 @@ class AnimatedItemWidget extends StatefulWidget {
 class _AnimatedItemWidget extends State<AnimatedItemWidget>
     with TickerProviderStateMixin {
   late final AnimationController animationController = AnimationController(
-    duration: kThemeChangeDuration,
+    duration: widget.animateDuration,
     vsync: this,
   );
   late final bool deletable = widget.onRemove != null;
@@ -209,7 +214,7 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
     setState(() {});
   }
 
-  animationStatus(AnimationStatus status) {
+  _animationStatus(AnimationStatus status) {
     // print('animationStatus $confirmDelete');
     if (confirmDelete) widget.onRemove?.call(widget.index);
   }
@@ -222,7 +227,7 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
         .animate(animationController);
     animationController.forward();
     (animation!).addListener(update);
-    (animation!).addStatusListener(animationStatus);
+    (animation!).addStatusListener(_animationStatus);
   }
 
   @override
@@ -273,7 +278,7 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
   _dragStart(_) {
     animationController..stop();
     animation?.removeListener(update);
-    animation?.removeStatusListener(animationStatus);
+    animation?.removeStatusListener(_animationStatus);
     // print('start $offsetX');
   }
 
@@ -295,17 +300,20 @@ class _AnimatedItemWidget extends State<AnimatedItemWidget>
     } else {
       target = size.width;
     }
+    if (velocity.abs() > 2000 || (_dragOffset.abs() > target / 2.0)) {
+      end = _dragOffset > 0 ? target : -target;
+    }
     // print({
     //   'target': target,
     //   'dragOffset': _dragOffset,
     //   'primaryVelocity': details.primaryVelocity,
     //   'velocity': details.velocity,
+    //   'end': end,
     // });
-    if (velocity.abs() > 2000 || (_dragOffset < -target / 2.0)) {
-      end = _dragOffset > 0 ? target : -target;
+    if (end != 0) {
+      confirmDelete = await widget.beforeRemove?.call(widget.index) ?? true;
+      if (!confirmDelete) end = 0;
     }
-    confirmDelete = await widget.beforeRemove?.call(widget.index) ?? true;
-    if (!confirmDelete) end = 0;
     _animateTo(end);
   }
 }
