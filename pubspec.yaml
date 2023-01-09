@@ -1,0 +1,18 @@
+name: stacked_listview
+description: A ListView of stacked children. Each children will stacked at first when scroll.
+version: 1.0.4
+homepage: https://github.com/gzlock/flutter_stacked_listview
+
+environment:
+  sdk: ">=2.12.0 <3.0.0"
+  flutter: ">=2.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
